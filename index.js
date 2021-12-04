@@ -34,7 +34,7 @@ client.on('messageCreate', async message  => {
 	if (!message.content.startsWith(prefix)) return;
 
 	const commandName = message.content.split(" ")[0].slice(prefix.length);
-	console.log(`commandCall: ${commandName}; caller: ${message.author.username}`)
+	console.log(`commandCall: ${message.content}; caller: ${message.author.username}`)
 	
 	if (!client.commands.has(commandName)){
 		await message.reply({ content: 'Not a command I know of', ephemeral: true });

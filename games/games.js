@@ -1,4 +1,3 @@
-const { MessageEmbed } = require('discord.js');
 const { HoLYApp } = require('./HoLY/HoLY')
 
 const Games = {
@@ -8,6 +7,7 @@ const Games = {
             search : HoLYApp.search,
             start : HoLYApp.start,
             guess : HoLYApp.guess,
+            next : HoLYApp.next,
         }
 	}
 }

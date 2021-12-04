@@ -10,7 +10,7 @@ function HoLVideosMessage(prevVideo, newVideo){
         fields: [
             {
                 name: 'View Count',
-                value: `${prevVideo.viewCount}`,
+                value: parseFloat(prevVideo.viewCount).toLocaleString('en'),
             },
         ],
         thumbnail: {
@@ -25,7 +25,7 @@ function HoLVideosMessage(prevVideo, newVideo){
         thumbnail: {
             url: newVideo.thumbnail.medium.url,
         },
-        description: 'Is this Higuer or Lower?'
+        description: 'Is this Higher or Lower\nType \'!!game HoLY guess higher/lower\' to guess!'
     }
     response.push({ embeds: [newVideoEmbed] })
     return response
@@ -42,7 +42,7 @@ function ErrorMessage(errMsg){
 }
 
 const guessOptions = {
-    higuer: 1,
+    Higher: 1,
     lower: 0,
 }
 
@@ -56,8 +56,11 @@ const guessResultOptions = {
 class HoLYApp {
     static async search(args, kwargs) {
         let channels = await search(kwargs.userId, args[0])
-        console.log("CHANNELS", channels)
         let response = []
+
+        if(channels.data.length == 0){
+            return ErrorMessage('No Channel found with this name')
+        }
         
         for(let channel of channels.data){
             const channelEmbed = {
@@ -99,7 +102,8 @@ class HoLYApp {
 
         sessions[kwargs.userId] = {
             videos: videos.data,
-            round: 0
+            round: 0,
+            active: true,
         }
 
         
@@ -110,6 +114,10 @@ class HoLYApp {
 
         if(!(kwargs.userId in sessions)){
             return ErrorMessage('User has no open Game')
+        }
+
+        if(!sessions[kwargs.userId].active){
+            return ErrorMessage('Execute \'!!game HoLY next\' to continue')
         }
 
         if(!(args[0].toLowerCase() in guessOptions)){
@@ -123,7 +131,7 @@ class HoLYApp {
         if(guessResult.data.msg == 'game over'){
             const gameOverMsgEmbed = {
                 color: 0x0099ff,
-                title: `**${guessResultOptions[guessResult.msg]}**`,
+                title: `**${guessResultOptions[guessResult.data.msg]}**`,
                 fields: [
                     {
                         name: 'Lives',
@@ -131,11 +139,11 @@ class HoLYApp {
                     },
                     {
                         name: 'Views',
-                        value: `${guessResult.views}`,
+                        value: `${guessResult.data.views}`,
                     },
                     {
                         name: 'Round Number',
-                        value: `${guessResult.round}`,
+                        value: `${guessResult.data.round}`,
                     },
                 ]
                 
@@ -152,6 +160,7 @@ class HoLYApp {
 
         // update session
         sessions[kwargs.userId].round = guessResult.data.round
+        sessions[kwargs.userId].active = false
         // update current video
         sessions[kwargs.userId].videos[guessResult.data.round].viewCount = guessResult.data.views
 
@@ -166,19 +175,27 @@ class HoLYApp {
                 },
                 {
                     name: 'Views',
-                    value: `${guessResult.data.views}`,
+                    value: parseFloat(guessResult.data.views).toLocaleString('en'),
                 },
                 {
                     name: 'Round Number',
                     value: `${guessResult.data.round}`,
                 },
-            ]
+            ],
+            description: 'Type \'!!game HoLY next\' to continue!'
             
         }
-        response.push({ embeds: [guessResultEmbed] })
-        let nextRoundMessages = HoLVideosMessage(sessions[kwargs.userId].videos[guessResult.data.round], sessions[kwargs.userId].videos[guessResult.data.round+1])
-        response = [ ...response, ...nextRoundMessages]
-        return response
+        return { embeds: [guessResultEmbed] }
+    }
+
+    static next(args, kwargs){
+        let currentSession = sessions[kwargs.userId]
+        let nextRoundMessages = HoLVideosMessage(
+            currentSession.videos[currentSession.round],
+            currentSession.videos[currentSession.round+1]
+        )
+        sessions[kwargs.userId].active = true
+        return nextRoundMessages
     }
 }
 
