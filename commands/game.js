@@ -42,7 +42,7 @@ module.exports = {
 			return
 		} else { // if valid command
 			let commandResponse = await Games[commandParameters[0]].commands[commandParameters[1]](
-				commandParameters.slice(1),
+				commandParameters.slice(2),
 				{
 					userId: message.author.id
 				}
